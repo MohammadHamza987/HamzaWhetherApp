@@ -249,7 +249,7 @@ async function fetchCitySuggestions() {
 
   try {
     const res = await fetch(
-      `http://api.openweathermap.org/geo/1.0/direct?q=${query.value}&limit=5&appid=${api_key}`
+      `https://api.openweathermap.org/geo/1.0/direct?q=${query.value}&limit=5&appid=${api_key}`
     )
     const data = await res.json()
     suggestions.value = data
