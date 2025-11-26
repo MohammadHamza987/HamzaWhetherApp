@@ -1,6 +1,9 @@
 <template>
-  <div id="app" class="min-h-screen bg-linear-to-br from-blue-400 via-blue-500 to-purple-600 dark:from-slate-900 dark:via-blue-900 dark:to-purple-900 p-4 md:p-8">
-    <div class="max-w-2xl mx-auto">
+  <div id="app"
+      class="min-h-screen bg-cover bg-center transition-all duration-700"
+      :style="backgroundStyle">
+    <div class="min-h-screen bg-black/40 p-4 md:p-8">
+      <div class="max-w-2xl mx-auto">
       <!-- Header -->
       <div class="text-center mb-8">
         <h1 class="text-4xl md:text-5xl font-bold text-white mb-2">
@@ -157,13 +160,19 @@
           </p>
         </CardContent>
       </Card>
+      </div>
     </div>
   </div>
+
 </template>
 
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import defaultbg from '@/assets/whether-bg/default.jpg'
+import desertbg from '@/assets/whether-bg/desert.jpg'
+import greenbg from '@/assets/whether-bg/green.jpg'
+import snowybg from '@/assets/whether-bg/snow.jpg'
+import { ref, onMounted, computed } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
@@ -179,6 +188,33 @@ const loading = ref(false)
 const suggestions = ref([])
 const showSuggestions = ref(false)
 let debounceTimer = null
+
+// Dynamic background style based on weather
+const backgroundStyle = computed(() => {
+  //default background
+  if(!whether.value.main){
+    return {
+      backgroundImage: `url(${defaultbg})`,
+    }
+  }
+  const temp=whether.value.main.temp
+//cold
+if(temp<=10){
+  return {
+    backgroundImage: `url(${snowybg})`,
+  }
+}
+//pleasant
+else if(temp>10 && temp<=25){
+  return {
+    backgroundImage: `url(${greenbg})`,
+  }
+}
+//hot
+return {
+  backgroundImage: `url(${desertbg})`,
+}
+})
 
 // Load city from URL on mount
 onMounted(() => {
