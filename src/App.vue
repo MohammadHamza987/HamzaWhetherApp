@@ -163,7 +163,7 @@
 
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
@@ -178,6 +178,17 @@ const whether = ref({})
 const loading = ref(false)
 const suggestions = ref([])
 const showSuggestions = ref(false)
+let debounceTimer = null
+
+// Load city from URL on mount
+onMounted(() => {
+  const urlParams = new URLSearchParams(window.location.search)
+  const cityFromUrl = urlParams.get('city')
+  if (cityFromUrl) {
+    query.value = cityFromUrl
+    searchCity()
+  }
+})
 
 function fetchWhether(e) {
   if (e.key === 'Enter') {
@@ -190,10 +201,15 @@ async function searchCity() {
   loading.value = true
   whether.value = {}
   showSuggestions.value = false
+  
+  // Update URL with city parameter
+  const url = new URL(window.location)
+  url.searchParams.set('city', query.value)
+  window.history.pushState({}, '', url)
+  
   try {
     const res = await fetch(`${url_base}weather?q=${query.value}&units=metric&APPID=${api_key}`)
     const results = await res.json()
-    await new Promise(resolve => setTimeout(resolve, 800)) // Simulate loading delay
     whether.value = results
   } catch (error) {
     console.error('Error fetching weather:', error)
@@ -241,24 +257,32 @@ function getWeatherIcon(weather) {
 }
 
 async function fetchCitySuggestions() {
+  // Clear previous timer
+  if (debounceTimer) {
+    clearTimeout(debounceTimer)
+  }
+
   if (query.value.trim().length < 2) {
     suggestions.value = []
     showSuggestions.value = false
     return
   }
 
-  try {
-    const res = await fetch(
-      `https://api.openweathermap.org/geo/1.0/direct?q=${query.value}&limit=5&appid=${api_key}`
-    )
-    const data = await res.json()
-    suggestions.value = data
-    showSuggestions.value = data.length > 0
-  } catch (error) {
-    console.error('Error fetching city suggestions:', error)
-    suggestions.value = []
-    showSuggestions.value = false
-  }
+  // Debounce: Wait 500ms before making API call
+  debounceTimer = setTimeout(async () => {
+    try {
+      const res = await fetch(
+        `https://api.openweathermap.org/geo/1.0/direct?q=${query.value}&limit=5&appid=${api_key}`
+      )
+      const data = await res.json()
+      suggestions.value = data
+      showSuggestions.value = data.length > 0
+    } catch (error) {
+      console.error('Error fetching city suggestions:', error)
+      suggestions.value = []
+      showSuggestions.value = false
+    }
+  }, 500) // 500ms debounce delay
 }
 
 // Close suggestions when clicking outside
@@ -272,9 +296,8 @@ if (typeof window !== 'undefined') {
 </script>
 
 <style scoped>
-/* Optional: Add smooth transitions */
 .card {
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease;
 }
 
 .card:hover {
